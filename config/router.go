@@ -37,14 +37,10 @@ func SetupRoutes(
 		login.POST("", loginHandler.Login)
 	}
 
-	// 📁 Produtos
-	produtos := api.Group("/produtos")
+	publicProdutos := api.Group("/produtos")
 	{
-		produtos.POST("", produtoHandler.CreateProductHandler)
-		produtos.GET("", produtoHandler.ListProdutosHandler)
-		produtos.GET("/:id", produtoHandler.GetProductByIdHandler)
-		produtos.PUT("/:id", produtoHandler.UpdateProdutoByIdHandler)
-		produtos.PUT("/:id/inativar", produtoHandler.InativarProdutoHandler)
+		publicProdutos.GET("", produtoHandler.ListProdutosHandler)
+		publicProdutos.GET("/:id", produtoHandler.GetProductByIdHandler)
 	}
 
 	// 📁 Admin

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"awesomeProject/Internal_temp/handler"
 	Repository "awesomeProject/Internal_temp/repository"
@@ -12,21 +13,42 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
 	// 📂 Carrega variáveis de ambiente
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Erro ao carregar .env: ", err)
+		log.Println("⚠️  Aviso: .env não encontrado (seguindo com variáveis padrão)")
 	}
 
 	// 🚀 Inicializa Echo
 	e := echo.New()
 
+	// 🌐 Middleware CORS (permite acesso do React)
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{
+			"http://localhost:3000", // frontend React local
+		},
+		AllowMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
+		AllowHeaders: []string{
+			"Content-Type",
+			"Authorization",
+			"Accept",
+		},
+		AllowCredentials: true,
+	}))
+
 	// 🧩 Conexão com o banco
 	conn, err := dataSrc.Connect()
 	if err != nil {
-		log.Fatal("Erro ao conectar ao banco: ", err)
+		log.Fatal("❌ Erro ao conectar ao banco: ", err)
 	}
 	queries := dbsqlc.New(conn)
 
@@ -59,9 +81,9 @@ func main() {
 	produtoHandler := handler.NewProdutoHandler(produtoService)
 	salesHandler := handler.NewSaleHandler(salesService)
 	adminHandler := handler.NewAdminHandler(adminService)
-	activationHandler := handler.NewActivationHandler(activationService) // ✅ Activation
+	activationHandler := handler.NewActivationHandler(activationService)
 
-	// 🛣️ Rotas
+	// 🛣️ Configura rotas
 	config.SetupRoutes(
 		e,
 		cadastroHandler,
@@ -75,6 +97,6 @@ func main() {
 	)
 
 	// 🖥️ Inicia servidor
-	log.Println("🚀 Servidor rodando na porta 8080")
+	log.Println("🚀 Servidor rodando na porta 8080 (CORS habilitado para http://localhost:3000)")
 	e.Logger.Fatal(e.Start(":8080"))
 }

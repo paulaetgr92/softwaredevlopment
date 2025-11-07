@@ -1,69 +1,86 @@
+/**
+ * Função genérica para chamadas à API
+ * Suporta autenticação via Bearer token armazenado no localStorage
+ */
 export async function apiFetch(endpoint, options = {}, authToken = null) {
-  const token = authToken || localStorage.getItem("token");
-  const headers = {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options.headers,
-  };
+    const token = authToken || localStorage.getItem("token");
 
-  let response, data;
+    const headers = {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+    };
 
-  try {
-    response = await fetch(`http://localhost:8080/api/v1/${endpoint}`, {
-      ...options,
-      headers,
-    });
+    let response, data;
 
-    const text = await response.text();
     try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = { message: text };
+        response = await fetch(`http://localhost:8080/api/v1/${endpoint}`, {
+            ...options,
+            headers,
+        });
+
+        const text = await response.text();
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch {
+            data = { message: text };
+        }
+    } catch (error) {
+        throw new Error("❌ Erro de conexão com o servidor.");
     }
-  } catch (error) {
-    throw new Error("Erro de conexão com o servidor");
-  }
 
-  if (!response.ok) {
-    console.error("Erro do backend:", data);
-    const errorMessage = data.error || data.message || "Erro na API";
-    throw new Error(errorMessage);
-  }
+    if (!response.ok) {
+        console.error("⚠️ Erro do backend:", data);
+        const errorMessage = data.error || data.message || "Erro na API";
+        throw new Error(errorMessage);
+    }
 
-  return data;
+    return data;
 }
 
+/**
+ * Admin — Criar novo administrador
+ */
 export async function createAdmin(adminData) {
-  return apiFetch("admin/create", {
-    method: "POST",
-    body: JSON.stringify(adminData),
-  });
+    return apiFetch("admin/create", {
+        method: "POST",
+        body: JSON.stringify(adminData),
+    });
 }
 
+/**
+ * Admin — Login
+ */
 export async function loginAdmin(credentials) {
-  return apiFetch("admin/login", {
-    method: "POST",
-    body: JSON.stringify(credentials),
-  });
+    return apiFetch("admin/login", {
+        method: "POST",
+        body: JSON.stringify(credentials),
+    });
 }
 
+/**
+ * Admin — Criar venda
+ */
 export async function createSale(saleData, adminToken) {
-  return apiFetch(
-    "sales",
-    {
-      method: "POST",
-      body: JSON.stringify(saleData),
-    },
-    adminToken
-  );
+    return apiFetch(
+        "sales",
+        {
+            method: "POST",
+            body: JSON.stringify(saleData),
+        },
+        adminToken
+    );
 }
 
+/**
+ * Admin — Listar produtos
+ */
 export async function listAllProducts(adminToken) {
-  return apiFetch(
-    "admin/produtos",
-    {
-      method: "GET",
-    },
-    adminToken
-  );
+    return apiFetch(
+        "admin/produtos",
+        {
+            method: "GET",
+        },
+        adminToken
+    );
 }
