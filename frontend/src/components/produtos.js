@@ -1,10 +1,10 @@
 // services/produtos.js
 import {
-    listarProdutos as apiListarProdutos,
-    criarProduto as apiCriarProduto,
-    buscarProdutoPorId as apiBuscarProdutoPorId,
-    inativarProduto as apiInativarProduto,
-    atualizarProduto as apiAtualizarProduto
+  listarProdutos as apiListarProdutos,
+  criarProduto as apiCriarProduto,
+  buscarProdutoPorId as apiBuscarProdutoPorId,
+  inativarProduto as apiInativarProduto,
+  atualizarProduto as apiAtualizarProduto,
 } from "../api";
 
 /**
@@ -12,7 +12,7 @@ import {
  * @param {string} adminToken - Token de autenticação
  */
 export async function listarProdutos(adminToken) {
-    return apiListarProdutos(adminToken);
+  return apiListarProdutos(adminToken);
 }
 
 /**
@@ -21,7 +21,7 @@ export async function listarProdutos(adminToken) {
  * @param {string} adminToken - Token de autenticação
  */
 export async function criarProduto(dadosProduto, adminToken) {
-    return apiCriarProduto(dadosProduto, adminToken);
+  return apiCriarProduto(dadosProduto, adminToken);
 }
 
 /**
@@ -30,7 +30,7 @@ export async function criarProduto(dadosProduto, adminToken) {
  * @param {string} adminToken - Token de autenticação
  */
 export async function buscarProdutoPorId(idProduto, adminToken) {
-    return apiBuscarProdutoPorId(idProduto, adminToken);
+  return apiBuscarProdutoPorId(idProduto, adminToken);
 }
 
 /**
@@ -40,7 +40,7 @@ export async function buscarProdutoPorId(idProduto, adminToken) {
  * @param {string} adminToken - Token de autenticação
  */
 export async function atualizarProduto(idProduto, dadosProduto, adminToken) {
-    return apiAtualizarProduto(idProduto, dadosProduto, adminToken);
+  return apiAtualizarProduto(idProduto, dadosProduto, adminToken);
 }
 
 /**
@@ -49,5 +49,5 @@ export async function atualizarProduto(idProduto, dadosProduto, adminToken) {
  * @param {string} adminToken - Token de autenticação
  */
 export async function inativarProduto(idProduto, adminToken) {
-    return apiInativarProduto(idProduto, adminToken);
+  return apiInativarProduto(idProduto, adminToken);
 }
