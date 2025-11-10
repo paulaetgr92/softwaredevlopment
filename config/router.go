@@ -60,7 +60,7 @@ func SetupRoutes(
 	activation := api.Group("/activation")
 	{
 
-		activation.POST("/save", activationHandler.SaveActivationCode)
+		activation.POST("/form", activationHandler.SaveActivationCode)
 
 		activation.GET("/verify", activationHandler.VerifyActivationCode)
 

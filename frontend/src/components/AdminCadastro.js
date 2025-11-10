@@ -16,7 +16,7 @@ export async function listar(token) {
 }
 
 // Criar produto
-export async function criarProduto(produtoData, token) {
+export async function createProduct(produtoData, token) {
     return chamarAPI("admin/produtos/create", {
         method: "POST",
         body: JSON.stringify(produtoData),
@@ -24,7 +24,7 @@ export async function criarProduto(produtoData, token) {
 }
 
 // Atualizar produto
-export async function atualizarProduto(produtoId, produtoData, token) {
+export async function UpdateProduct(produtoId, produtoData, token) {
     return chamarAPI(`admin/produtos/${produtoId}`, {
         method: "PUT",
         body: JSON.stringify(produtoData),

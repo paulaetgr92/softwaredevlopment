@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import {
     listarProdutos,
-    criarProduto,
-    buscarProdutoPorId,
+   criarProduto,
+    listProductByID,
     atualizarProduto,
     inativarProduto,
     listar
@@ -77,7 +77,7 @@ const AdminDashboard = ({ adminToken, onLogout }) => {
         setLoading(true);
         setError("");
         try {
-            const produto = await buscarProdutoPorId(idProduto, adminToken);
+            const produto = await listProductByID(idProduto, adminToken);
             setEditingProduct(produto);
             setProdutoForm(produto);
             setShowEditModal(true);

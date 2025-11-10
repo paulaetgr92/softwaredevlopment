@@ -1,10 +1,13 @@
-/* ==================== FUNÇÃO GENÉRICA DE CHAMADA À API ==================== */
-export async function chamarAPI(endpoint, options = {}, token = null) {
-    const authToken = token || localStorage.getItem("token");
+/**
+ * Função genérica para chamadas à API
+ * Suporta autenticação via Bearer token armazenado no localStorage
+ */
+export async function apiFetch(endpoint, options = {}, authToken = null) {
+    const token = authToken || localStorage.getItem("token");
 
     const headers = {
         "Content-Type": "application/json",
-        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
     };
 
@@ -35,99 +38,46 @@ export async function chamarAPI(endpoint, options = {}, token = null) {
     return data;
 }
 
-/* ==================== ADMIN ==================== */
+/**
+ * Admin — Criar novo administrador
+ */
 export async function admin(adminData) {
-    return chamarAPI("admin/create", {
+    return apiFetch("admin/create", {
         method: "POST",
         body: JSON.stringify(adminData),
     });
 }
 
-/* ==================== PRODUTOS (ADMIN) ==================== */
-export async function listar(token) {
-    return chamarAPI("admin/produtos", { method: "GET" }, token);
-}
-
-export async function criarProduto(produtoData, token) {
-    return chamarAPI("admin/produto/:id", {
+export async function listProductByID(adminData) {
+    return apiFetch("admin/create", {
         method: "POST",
-        body: JSON.stringify(produtoData),
-    }, token);
+        body: JSON.stringify(adminData),
+    });
+}
+/**
+ * Admin — Criar venda
+ */
+export async function createSale(saleData, adminToken) {
+    return apiFetch(
+        "/products/sale",
+        {
+            method: "POST",
+            body: JSON.stringify(saleData),
+        },
+        adminToken
+    );
 }
 
-export async function listAllProducts(produtoData, token) {
-    return chamarAPI("products/sale/list", {
-        method: "POST",
-        body: JSON.stringify(produtoData),
-    }, token);
+/**
+ * Admin — Listar produtos
+ */
+export async function listAllProducts(adminToken) {
+    return apiFetch(
+        "admin/produtos",
+        {
+            method: "GET",
+        },
+        adminToken
+    );
 }
 
-export async function atualizarProduto(produtoId, produtoData, token) {
-    return chamarAPI(`admin/produtos/${produtoId}`, {
-        method: "PUT",
-        body: JSON.stringify(produtoData),
-    }, token);
-}
-
-export async function inativarProduto(produtoId, token) {
-    return chamarAPI(`admin/produtos/${produtoId}`, { method: "DELETE" }, token);
-}
-
-/* ==================== VENDAS ==================== */
-export async function createSale(saleData, token) {
-    return chamarAPI("products/sale" , {
-        method: "POST",
-        body: JSON.stringify(saleData),
-    }, token);
-}
-
-/* ==================== ATIVAÇÃO (SELLER) ==================== */
-export async function salvarCodigoAtivacao(cadastroId, codigo, token = null) {
-    return chamarAPI("activation/save", {
-        method: "POST",
-        body: JSON.stringify({ cadastroId, code: codigo }),
-    }, token);
-}
-
-export async function verificarCodigoAtivacao(cadastroId, codigo, token = null) {
-    return chamarAPI("activation/verify", {
-        method: "POST",
-        body: JSON.stringify({ cadastroId, code: codigo }),
-    }, token);
-}
-
-/* ==================== PRODUTOS PÚBLICOS ==================== */
-export async function listarProdutosPublicos() {
-    return chamarAPI("products/public", { method: "GET" });
-}
-
-export async function buscarProdutoPublicoPorId(id) {
-    return chamarAPI(`products/public/${id}`, { method: "GET" });
-}
-
-
-/* ==================== CLASSE APIFETCH ==================== */
-export class apiFetch {
-    static admin = {
-        create: admin,
-        listarProdutos: listar,
-        criarProduto: criarProduto,
-        atualizarProduto: atualizarProduto,
-        inativarProduto: inativarProduto,
-    };
-
-    static vendas = {
-        create: createSale,
-        listAll: listAllProducts,
-    };
-
-    static ativacao = {
-        salvarCodigo: salvarCodigoAtivacao,
-        verificarCodigo: verificarCodigoAtivacao,
-    };
-
-    static produtosPublicos = {
-        listar: listarProdutosPublicos,
-        buscarPorId: buscarProdutoPublicoPorId,
-    };
-}
