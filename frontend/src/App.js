@@ -1,53 +1,90 @@
-import React from "react";
+import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// COMPONENTES
-import AdminDashboard from "./components/AdminDashboard";
-import AtivarConta from "./components/Sellers";// corrigido
-import ProductDetail from "./components/ProductDetail";
+import ModernLogin from "./components/ModernLogin";
+import ModernCadastro from "./components/ModernCadastro";
+import AtivarConta from "./components/Sellers";
+import RentalDashboard from "./components/RentalDashboard";
+import RentClothingPage from "./components/RentClothingPage";
 import ProductList from "./components/ProductList";
-import PublicProducts from "./components/ProdutosPublicos";
-import CreateSale from "./components/SalesForm";
-import ListAllProducts from "./components/ProductList"; // se for lista de vendas, talvez precise criar um componente separado
+import ProductDetail from "./components/ProductDetail";
+import ModernLoginAdmin from "./components/MordernLoginAdm";
+import AdminDashboard from "./components/AdminDashboard";
+import "./App.css";
 
 function App() {
-    const token = localStorage.getItem("token"); // token do admin ou seller
+    const [token, setToken] = useState(localStorage.getItem("token") || "");
+    const [currentView, setCurrentView] = useState("login");
+
+    const handleLogout = () => {
+        setToken("");
+        localStorage.removeItem("token");
+        localStorage.removeItem("userEmail");
+    };
+
+    const switchToLogin = () => setCurrentView("login");
+    const switchToCadastro = () => setCurrentView("cadastro");
 
     return (
         <Router>
             <Routes>
-                {/* Painel Admin */}
+                {/* Rotas de usuário */}
+                {!token ? (
+                    <>
+                        <Route
+                            path="/"
+                            element={
+                                currentView === "login" ? (
+                                    <ModernLogin setToken={setToken} switchToCadastro={switchToCadastro} />
+                                ) : (
+                                    <ModernCadastro setToken={setToken} switchToLogin={switchToLogin} />
+                                )
+                            }
+                        />
+                        <Route path="/ativar-conta" element={<AtivarConta />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </>
+                ) : (
+                    <>
+                        <Route
+                            path="/dashboard"
+                            element={<RentalDashboard token={token} onLogout={handleLogout} />}
+                        />
+                        <Route
+                            path="/alugar/:id"
+                            element={<RentClothingPage token={token} onLogout={handleLogout} />}
+                        />
+                        <Route path="/produtos" element={<ProductList token={token} />} />
+                        <Route path="/produtos/:id" element={<ProductDetail token={token} />} />
+                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    </>
+                )}
+
+                {/* Rotas admin */}
                 <Route
-                    path="/admin"
-                    element={<AdminDashboard adminToken={token} onLogout={() => window.location.reload()} />}
+                    path="/admin/login"
+                    element={<ModernLoginAdmin setAdminToken={(token) => {
+                        localStorage.setItem("adminToken", token);
+                        window.location.href = "/admin/dashboard";
+                    }} />}
                 />
 
-                {/* Lista de produtos do admin */}
-                <Route path="/admin/produtos/list" element={<ProductList />} />
+                <Route
+                    path="/admin/dashboard"
+                    element={
+                        localStorage.getItem("adminToken") ? (
+                            <AdminDashboard onLogout={() => {
+                                localStorage.removeItem("adminToken");
+                                window.location.href = "/admin/login";
+                            }} />
+                        ) : (
+                            <Navigate to="/admin/login" replace />
+                        )
+                    }
+                />
 
-                {/* Detalhes de produto do admin */}
-                <Route path="/admin/products/:id" element={<ProductDetail />} />
-
-                {/* Painel Seller */}
-                <Route path="/seller" element={<SellerDashboard token={token} />} />
-
-                {/* Ativação de Conta Seller */}
-                <Route path="/ativar-conta" element={<AtivarConta token={token} />} />
-
-                {/* Lista de produtos públicos */}
-                <Route path="/products/public" element={<PublicProducts />} />
-
-                {/* Detalhes de produto público */}
-                <Route path="/products/public/:id" element={<ProductDetail />} />
-
-                {/* Criar venda */}
-                <Route path="/products/sale" element={<CreateSale />} />
-
-                {/* Lista de vendas */}
-                <Route path="/products/sale/list" element={<ListAllProducts />} />
-
-                {/* Redirect padrão */}
-                <Route path="*" element={<Navigate to="/seller" replace />} />
+                {/* Qualquer rota admin inválida redireciona */}
+                <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
             </Routes>
         </Router>
     );

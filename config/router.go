@@ -6,17 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func SetupRoutes(
-	e *echo.Echo,
-	cadastroHandler *handler2.CadastroHandler,
-	userTokenHandler *handler2.UserTokensHistHandler,
-	loginHandler *handler2.LoginHandler,
-	sellerHandler *handler2.SellerHandler,
-	produtoHandler *handler2.ProdutoHandler,
-	salesHandler *handler2.SaleHandler,
-	adminHandler *handler2.AdminHandler,
-	activationHandler *handler2.ActivationHandler, // ✅ Adicionado
-) {
+func SetupRoutes(e *echo.Echo, cadastroHandler *handler2.CadastroHandler, userTokenHandler *handler2.UserTokensHistHandler, loginHandler *handler2.LoginHandler, produtoHandler *handler2.ProdutoHandler, salesHandler *handler2.SaleHandler, adminHandler *handler2.AdminHandler) {
 	api := e.Group("/api/v1")
 
 	// 📁 Cadastro
@@ -25,22 +15,25 @@ func SetupRoutes(
 		cadastros.POST("", cadastroHandler.CreateCadastro)
 	}
 
-	// 📁 Sellers
-	sellers := api.Group("/sellers")
-	{
-		sellers.POST("", sellerHandler.CreateSeller)
-	}
-
 	// 📁 Login
 	login := api.Group("/login")
 	{
 		login.POST("", loginHandler.Login)
 	}
 
+	adminProdutos := api.Group("/produtos")
+	{
+		adminProdutos.POST("", produtoHandler.CreateProductHandler)
+		adminProdutos.PUT("/:id", produtoHandler.UpdateProdutoByIdHandler)
+		adminProdutos.DELETE("/:id", produtoHandler.InativarProdutoHandler)
+		adminProdutos.GET("", produtoHandler.ListProdutosHandler)
+		adminProdutos.GET("/:id", produtoHandler.GetProductByIdHandler)
+	}
+	// 📁 Produtos (rotas públicas)
 	publicProdutos := api.Group("/produtos")
 	{
-		publicProdutos.GET("", produtoHandler.ListProdutosHandler)
-		publicProdutos.GET("/:id", produtoHandler.GetProductByIdHandler)
+		publicProdutos.GET("", produtoHandler.ListProdutosHandler)       // Lista todos os produtos
+		publicProdutos.GET("/:id", produtoHandler.GetProductByIdHandler) // Detalhe de um produto específico
 	}
 
 	// 📁 Admin
@@ -57,15 +50,6 @@ func SetupRoutes(
 	}
 
 	// 📁 Ativação (🔐 Nova seção)
-	activation := api.Group("/activation")
-	{
-
-		activation.POST("/form", activationHandler.SaveActivationCode)
-
-		activation.GET("/verify", activationHandler.VerifyActivationCode)
-
-		activation.GET("/get", activationHandler.GetActivationCode)
-	}
 
 	// 📌 Health Check
 	api.GET("/health", func(c echo.Context) error {

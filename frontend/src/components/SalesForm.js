@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { createSale, listAllProducts } from '../api';
+import { createSale, listarProdutos} from '../api';
 import './SalesForm.css';
+import {listar} from "./AdminCadastro";
 
 function SalesForm({ adminToken }) {
     const [products, setProducts] = useState([]);
@@ -12,7 +13,7 @@ function SalesForm({ adminToken }) {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await listAllProducts(adminToken);
+                const response = await listarProdutos(adminToken);
                 setProducts(Array.isArray(response) ? response : []); // garantindo array
             } catch (error) {
                 console.error('Erro ao buscar produtos:', error);

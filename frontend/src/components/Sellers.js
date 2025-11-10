@@ -1,80 +1,87 @@
-import React, { useState } from "react";
-import { salvarCodigoAtivacao, verificarCodigoAtivacao } from "../api"; // ajuste o caminho conforme sua estrutura
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { apiFetch } from "../api";
+import "./RentalAuth.css";
 
-export default function AtivarConta({ token }) {
-    const [cadastroId, setCadastroId] = useState("");
-    const [codigoAtivacao, setCodigoAtivacao] = useState("");
-    const [messageSalvar, setMessageSalvar] = useState("");
-    const [messageVerificar, setMessageVerificar] = useState("");
+export default function AtivarConta() {
+    const location = useLocation();
+    const email = location.state?.email;
+    const [codigo, setCodigo] = useState("");
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const navigate = useNavigate();
 
-    // Handler para salvar código de ativação
-    const handleSalvarCodigo = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessageSalvar("");
+        setError("");
+        setSuccess("");
+
+        if (!codigo) {
+            setError("Informe o código de ativação recebido por SMS");
+            return;
+        }
+
         setLoading(true);
         try {
-            const response = await salvarCodigoAtivacao(cadastroId, codigoAtivacao, token);
-            setMessageSalvar("✅ Código salvo com sucesso!");
-            console.log("Resposta da API (salvar):", response);
+            await apiFetch("ativar-conta", {
+                method: "POST",
+                body: JSON.stringify({ email, codigo }),
+            });
+
+            setSuccess("Conta ativada com sucesso! Redirecionando para login...");
+            setTimeout(() => navigate("/"), 1500);
         } catch (err) {
-            setMessageSalvar("❌ Erro ao salvar código: " + err.message);
-            console.error(err);
+            if (err.status === 401) {
+                setError("Código inválido ou não autorizado. Verifique o SMS ou solicite outro.");
+            } else {
+                setError(err.message || "Erro ao ativar conta");
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    // Handler para verificar código de ativação
-    const handleVerificarCodigo = async (e) => {
-        e.preventDefault();
-        setMessageVerificar("");
-        setLoading(true);
-        try {
-            const response = await verificarCodigoAtivacao(cadastroId, codigoAtivacao, token);
-            setMessageVerificar("✅ Código verificado com sucesso!");
-            console.log("Resposta da API (verificar):", response);
-        } catch (err) {
-            setMessageVerificar("❌ Código inválido ou erro na verificação");
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    if (!email) {
+        return (
+            <div className="rental-auth-container">
+                <div className="rental-auth-card">
+                    <p>Email não informado. Volte ao cadastro.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div style={{ maxWidth: "400px", margin: "0 auto" }}>
-            <h1>Ativar Conta</h1>
+        <div className="rental-auth-container">
+            <div className="rental-auth-card">
+                <div className="rental-logo">
+                    <h1>DoutorRent</h1>
+                    <p className="rental-tagline">Ative sua conta para continuar</p>
+                </div>
 
-            <form onSubmit={handleSalvarCodigo} style={{ marginBottom: "20px" }}>
-                <input
-                    type="text"
-                    placeholder="ID do cadastro"
-                    value={cadastroId}
-                    onChange={(e) => setCadastroId(e.target.value)}
-                    required
-                    style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
-                />
-                <input
-                    type="text"
-                    placeholder="Código de ativação"
-                    value={codigoAtivacao}
-                    onChange={(e) => setCodigoAtivacao(e.target.value)}
-                    required
-                    style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
-                />
-                <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px" }}>
-                    {loading ? "Processando..." : "Salvar Código"}
-                </button>
-                {messageSalvar && <p style={{ marginTop: "10px" }}>{messageSalvar}</p>}
-            </form>
+                <div className="rental-auth-content">
+                    <h2>Ativação da conta</h2>
+                    <p>Digite o código que você recebeu por SMS</p>
+                    {error && <div className="rental-error">{error}</div>}
+                    {success && <div className="rental-success">{success}</div>}
 
-            <form onSubmit={handleVerificarCodigo}>
-                <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px" }}>
-                    {loading ? "Processando..." : "Verificar Código"}
-                </button>
-                {messageVerificar && <p style={{ marginTop: "10px" }}>{messageVerificar}</p>}
-            </form>
+                    <form onSubmit={handleSubmit} className="rental-form">
+                        <input
+                            type="text"
+                            name="codigo"
+                            placeholder="Código de ativação"
+                            value={codigo}
+                            onChange={(e) => setCodigo(e.target.value)}
+                            required
+                            className="rental-input"
+                        />
+                        <button type="submit" className="continue-btn" disabled={loading}>
+                            {loading ? "Validando código..." : "Ativar conta"}
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }

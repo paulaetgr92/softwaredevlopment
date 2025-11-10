@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api";
 import "./RentalAuth.css";
 
@@ -28,39 +28,65 @@ export default function ModernCadastro({ switchToLogin }) {
         setError("");
         setSuccess("");
 
-        const { password, confirmPassword, cpf, cnpj } = formData;
+        const { name, email, password, confirmPassword, cpf, cnpj, celular } = formData;
 
-        if (password !== confirmPassword) return setError("As senhas não coincidem");
-        if (password.length < 6) return setError("A senha deve ter pelo menos 6 caracteres");
-        if (!cpf && !cnpj) return setError("Preencha CPF ou CNPJ");
-        if (cpf && cpf.length !== 11) return setError("CPF deve ter 11 dígitos");
-        if (cnpj && cnpj.length !== 14) return setError("CNPJ deve ter 14 dígitos");
+        if (password !== confirmPassword) {
+            setError("As senhas não coincidem");
+            return;
+        }
+
+        if (password.length < 6) {
+            setError("A senha deve ter pelo menos 6 caracteres");
+            return;
+        }
+
+        if (!cpf && !cnpj) {
+            setError("Preencha CPF ou CNPJ");
+            return;
+        }
+
+        if (cpf && cpf.length !== 11) {
+            setError("CPF deve ter 11 dígitos");
+            return;
+        }
+
+        if (cnpj && cnpj.length !== 14) {
+            setError("CNPJ deve ter 14 dígitos");
+            return;
+        }
 
         setLoading(true);
 
         try {
-            const response = await apiFetch("cadastros", {
+            await apiFetch("cadastros", {
                 method: "POST",
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    cpf: cpf || null,
+                    cnpj: cnpj || null,
+                    celular: celular || null,
+                }),
             });
 
-            console.log("Resposta completa do backend:", response);
-
-
-            const cadastroId = response?.cadastro?.ID;
-
-            if (!cadastroId) throw new Error("Não foi possível identificar o ID do cadastro retornado.");
-
-            setSuccess("Cadastro criado com sucesso! Verifique seu SMS para o código de ativação.");
+            setSuccess("Conta criada com sucesso! Agora você precisa ativar sua conta.");
 
             setTimeout(() => {
-                navigate("/sellers", {
-                    state: { cadastro_id },
+                setSuccess("");
+                setFormData({
+                    name: "",
+                    email: "",
+                    password: "",
+                    confirmPassword: "",
+                    cpf: "",
+                    cnpj: "",
+                    celular: "",
                 });
+                navigate("/ativar-conta", { state: { email } });
             }, 1500);
         } catch (err) {
-            console.error("Erro no cadastro:", err);
-            setError(err.message || "Erro ao cadastrar");
+            setError(err.message || "Erro ao criar conta");
         } finally {
             setLoading(false);
         }
@@ -77,7 +103,6 @@ export default function ModernCadastro({ switchToLogin }) {
                 <div className="rental-auth-content">
                     <h2>Criar sua conta</h2>
                     <p>Comece a alugar looks incríveis</p>
-
                     {error && <div className="rental-error">{error}</div>}
                     {success && <div className="rental-success">{success}</div>}
 
@@ -89,15 +114,14 @@ export default function ModernCadastro({ switchToLogin }) {
                         <input type="text" name="celular" placeholder="Celular (somente números)" value={formData.celular} onChange={handleChange} className="rental-input" />
                         <input type="password" name="password" placeholder="Criar senha" value={formData.password} onChange={handleChange} required className="rental-input" />
                         <input type="password" name="confirmPassword" placeholder="Confirmar senha" value={formData.confirmPassword} onChange={handleChange} required className="rental-input" />
-
                         <button type="submit" className="continue-btn" disabled={loading}>
                             {loading ? "Criando conta..." : "Criar conta gratuita"}
                         </button>
                     </form>
 
                     <div className="rental-footer">
-                        <Link to="/politica" className="footer-link">Política de Privacidade</Link>
-                        <Link to="/termos" className="footer-link">Termos de Uso</Link>
+                        <a href="#" className="footer-link">Política de Privacidade</a>
+                        <a href="#" className="footer-link">Termos de Uso</a>
                     </div>
 
                     <div className="auth-switch-rental">

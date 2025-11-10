@@ -1,12 +1,13 @@
 package model
 
 type CadastroRequest struct {
-	Name string `json:"name"`
-
-	CPF        string     `json:"cpf"`
-	CNPJ       string     `json:"cnpj"`
-	Celular    string     `json:"celular"`
-	Email      string     `json:"email"`
-	Password   string     `json:"password"`
-	PayloadDTO PayloadDTO `json:"payloadDTO"`
+	Id             int64  `json:"id"`
+	Name           string `json:"name"`
+	ActivationCode string `json:"activationCode"`
+	CPF            string `json:"cpf"`
+	CNPJ           string `json:"cnpj"`
+	Celular        string `json:"celular"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	Status         string `json:"status"`
 }

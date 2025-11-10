@@ -1,6 +1,6 @@
 /**
  * Função genérica para chamadas à API
- * Suporta autenticação via Bearer token armazenado no localStorage
+ * Suporta autenticação via Bearer token
  */
 export async function apiFetch(endpoint, options = {}, authToken = null) {
     const token = authToken || localStorage.getItem("token");
@@ -26,6 +26,7 @@ export async function apiFetch(endpoint, options = {}, authToken = null) {
             data = { message: text };
         }
     } catch (error) {
+        console.error("❌ Erro de conexão com o servidor:", error);
         throw new Error("❌ Erro de conexão com o servidor.");
     }
 
@@ -39,45 +40,71 @@ export async function apiFetch(endpoint, options = {}, authToken = null) {
 }
 
 /**
- * Admin — Criar novo administrador
+ * Produtos (Admin ou público)
  */
-export async function admin(adminData) {
-    return apiFetch("admin/create", {
+export async function listarProdutos(token) {
+    return apiFetch("produtos", { method: "GET" }, token);
+}
+
+export async function buscarProdutoPorId(id, token) {
+    return apiFetch(`produtos/${id}`, { method: "GET" }, token);
+}
+
+export async function criarProduto(dadosProduto, token) {
+    return apiFetch("produtos", {
         method: "POST",
-        body: JSON.stringify(adminData),
+        body: JSON.stringify(dadosProduto),
+    }, token);
+}
+
+export async function atualizarProduto(id, dadosProduto, token) {
+    return apiFetch(`produtos/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(dadosProduto),
+    }, token);
+}
+
+export async function inativarProduto(id, token) {
+    return apiFetch(`produtos/${id}`, { method: "DELETE" }, token);
+}
+
+/**
+ * Vendas / Aluguéis
+ */
+export async function createSale(saleData, token) {
+    return apiFetch("sales", {
+        method: "POST",
+        body: JSON.stringify(saleData),
+    }, token);
+}
+
+/**
+ * Cadastros
+ */
+export async function cadastro(dadosCadastro) {
+    return apiFetch("cadastros", {
+        method: "POST",
+        body: JSON.stringify(dadosCadastro),
     });
 }
 
-export async function listProductByID(adminData) {
-    return apiFetch("admin/create", {
-        method: "POST",
-        body: JSON.stringify(adminData),
-    });
-}
 /**
- * Admin — Criar venda
+ * Login
  */
-export async function createSale(saleData, adminToken) {
-    return apiFetch(
-        "/products/sale",
-        {
-            method: "POST",
-            body: JSON.stringify(saleData),
-        },
-        adminToken
-    );
+export async function login(dadosLogin) {
+    return apiFetch("login", {
+        method: "POST",
+        body: JSON.stringify(dadosLogin),
+    });
 }
 
 /**
- * Admin — Listar produtos
+ * Admin
  */
-export async function listAllProducts(adminToken) {
-    return apiFetch(
-        "admin/produtos",
-        {
-            method: "GET",
-        },
-        adminToken
-    );
+export async function admin(dadosAdmin) {
+    return apiFetch("admin/login", {
+        method: "POST",
+        body: JSON.stringify(dadosAdmin),
+    });
 }
 

@@ -35,9 +35,3 @@ type SellerServiceInterface interface {
 type SaleServiceInterface interface {
 	CreateSale(ctx context.Context, request model.SaleRequest) (db.Sale, error)
 }
-
-type ActivationServiceInterface interface {
-	VerifyActivationCode(ctx context.Context, data model.ActivationCode) (db.VerifyActivationCodeRow, error)
-	SaveActivationCode(ctx context.Context, req model.ActivationCode) (model.ActivationCode, error)
-	GetActivationCode(ctx context.Context, activationCode string, cadastroID int64) (db.GetCadastroByActivationCodeRow, error)
-}

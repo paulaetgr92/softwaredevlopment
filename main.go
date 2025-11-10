@@ -57,31 +57,26 @@ func main() {
 	cadastroRepo := Repository.NewCadastroNewRepository(baseRepo)
 	tokenHistRepo := Repository.NewUserTokensHistRepository(*baseRepo)
 	loginRepo := Repository.NewLoginRepository(baseRepo)
-	sellerRepo := Repository.NewSellerRepository(*baseRepo)
 	produtoRepo := Repository.NewProdutosRepository(baseRepo)
 	salesRepo := Repository.NewSalesRepository(baseRepo)
 	adminRepo := Repository.NewAdminRepository(baseRepo)
-	activationRepo := Repository.NewActivationNewRepository(baseRepo)
 
 	// ⚙️ Serviços
-	sellerService := service.NewSellerService(sellerRepo, activationRepo)
-	cadastroService := service.NewCadastroService(cadastroRepo, activationRepo)
+	cadastroService := service.NewCadastroService(cadastroRepo)
 	tokenHistService := service.NewUserTokensHistService(tokenHistRepo)
 	loginService := service.NewLoginService(loginRepo)
 	produtoService := service.NewProdutoService(produtoRepo)
 	salesService := service.NewSaleService(*salesRepo)
 	adminService := service.NewAdminService(*adminRepo, produtoService)
-	activationService := service.NewActivationService(activationRepo)
 
 	// 🎮 Handlers
 	cadastroHandler := handler.NewCadastroHandler(cadastroService)
 	userTokensHistHandler := handler.NewUserTokensHistHandler(tokenHistService)
 	loginHandler := handler.NewLoginHandler(loginService)
-	sellerHandler := handler.NewSellerHandler(sellerService)
+
 	produtoHandler := handler.NewProdutoHandler(produtoService)
 	salesHandler := handler.NewSaleHandler(salesService)
 	adminHandler := handler.NewAdminHandler(adminService)
-	activationHandler := handler.NewActivationHandler(activationService)
 
 	// 🛣️ Configura rotas
 	config.SetupRoutes(
@@ -89,11 +84,9 @@ func main() {
 		cadastroHandler,
 		userTokensHistHandler,
 		loginHandler,
-		sellerHandler,
 		produtoHandler,
 		salesHandler,
 		adminHandler,
-		activationHandler,
 	)
 
 	// 🖥️ Inicia servidor

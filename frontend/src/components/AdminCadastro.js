@@ -36,14 +36,3 @@ export async function inativarProduto(produtoId, token) {
     return chamarAPI(`admin/produtos/${produtoId}`, { method: "DELETE" }, token);
 }
 
-/* ==================== PRODUTOS PÚBLICOS ==================== */
-
-// Listar todos os produtos públicos
-export async function listarProdutosPublicos() {
-    return chamarAPI("products/public", { method: "GET" });
-}
-
-// Buscar produto público por ID
-export async function buscarProdutoPublicoPorId(id) {
-    return chamarAPI(`products/public/${id}`, { method: "GET" });
-}
