@@ -54,8 +54,8 @@ export default function ModernCadastro({ switchToLogin }) {
             setSuccess("Cadastro criado com sucesso! Verifique seu SMS para o código de ativação.");
 
             setTimeout(() => {
-                navigate("/active", {
-                    state: { cadastroId },
+                navigate("/sellers", {
+                    state: { cadastro_id },
                 });
             }, 1500);
         } catch (err) {

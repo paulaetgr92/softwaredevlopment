@@ -21,7 +21,7 @@ export default function Active() {
                 method: "POST",
                 body: JSON.stringify({
                     cadastro_id: cadastroId,
-                    code: code,
+                    code: activation_code,
                 }),
             });
 

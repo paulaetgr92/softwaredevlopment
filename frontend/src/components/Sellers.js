@@ -1,89 +1,80 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { apiFetch } from "../api";
-import "./RentalAuth.css";
+import React, { useState } from "react";
+import { salvarCodigoAtivacao, verificarCodigoAtivacao } from "../api"; // ajuste o caminho conforme sua estrutura
 
-export default function ActivationForm() {
-    const [code, setCode] = useState("");
+export default function AtivarConta({ token }) {
+    const [cadastroId, setCadastroId] = useState("");
+    const [codigoAtivacao, setCodigoAtivacao] = useState("");
+    const [messageSalvar, setMessageSalvar] = useState("");
+    const [messageVerificar, setMessageVerificar] = useState("");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
-    const navigate = useNavigate();
-    const location = useLocation();
 
-    const cadastroId = location.state?.cadastroId;
-
-    const handleSubmit = async (e) => {
+    // Handler para salvar código de ativação
+    const handleSalvarCodigo = async (e) => {
         e.preventDefault();
-        setError("");
-        setSuccess("");
-
-        if (!code) return setError("Digite o código de ativação");
-
+        setMessageSalvar("");
         setLoading(true);
-
         try {
-        
-            const verifyResponse = await apiFetch("activation/verify", {
-                method: "POST",
-                body: JSON.stringify({ id: cadastroId, code }),
-            });
-            console.log("Resposta da verificação:", verifyResponse);
-
-            if (!verifyResponse?.success) {
-                throw new Error(verifyResponse?.message || "Código inválido");
-            }
-
-
-             const getResponse = await apiFetch(`activation/get?id=${cadastroId}&code=${code}`, {
-                 method: "GET",
-             });
-             console.log("Resposta da busca:", getResponse);
-
-            setSuccess("Cadastro ativado com sucesso!");
-            setTimeout(() => {
-                navigate("/login");
-            }, 1500);
-
+            const response = await salvarCodigoAtivacao(cadastroId, codigoAtivacao, token);
+            setMessageSalvar("✅ Código salvo com sucesso!");
+            console.log("Resposta da API (salvar):", response);
         } catch (err) {
-            console.error("Erro na requisição:", err);
-            setError(err.message || "Erro ao ativar cadastro");
+            setMessageSalvar("❌ Erro ao salvar código: " + err.message);
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handler para verificar código de ativação
+    const handleVerificarCodigo = async (e) => {
+        e.preventDefault();
+        setMessageVerificar("");
+        setLoading(true);
+        try {
+            const response = await verificarCodigoAtivacao(cadastroId, codigoAtivacao, token);
+            setMessageVerificar("✅ Código verificado com sucesso!");
+            console.log("Resposta da API (verificar):", response);
+        } catch (err) {
+            setMessageVerificar("❌ Código inválido ou erro na verificação");
+            console.error(err);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="rental-auth-container">
-            <div className="rental-auth-card">
-                <div className="rental-logo">
-                    <h1>DoutorRent</h1>
-                    <p className="rental-tagline">Ative sua conta</p>
-                </div>
+        <div style={{ maxWidth: "400px", margin: "0 auto" }}>
+            <h1>Ativar Conta</h1>
 
-                <div className="rental-auth-content">
-                    <h2>Ativação</h2>
-                    <p>Digite o código que você recebeu via SMS</p>
+            <form onSubmit={handleSalvarCodigo} style={{ marginBottom: "20px" }}>
+                <input
+                    type="text"
+                    placeholder="ID do cadastro"
+                    value={cadastroId}
+                    onChange={(e) => setCadastroId(e.target.value)}
+                    required
+                    style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
+                />
+                <input
+                    type="text"
+                    placeholder="Código de ativação"
+                    value={codigoAtivacao}
+                    onChange={(e) => setCodigoAtivacao(e.target.value)}
+                    required
+                    style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
+                />
+                <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px" }}>
+                    {loading ? "Processando..." : "Salvar Código"}
+                </button>
+                {messageSalvar && <p style={{ marginTop: "10px" }}>{messageSalvar}</p>}
+            </form>
 
-                    {error && <div className="rental-error">{error}</div>}
-                    {success && <div className="rental-success">{success}</div>}
-
-                    <form onSubmit={handleSubmit} className="rental-form">
-                        <input
-                            type="text"
-                            name="code"
-                            placeholder="Código de ativação"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            required
-                            className="rental-input"
-                        />
-                        <button type="submit" className="continue-btn" disabled={loading}>
-                            {loading ? "Ativando..." : "Ativar cadastro"}
-                        </button>
-                    </form>
-                </div>
-            </div>
+            <form onSubmit={handleVerificarCodigo}>
+                <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px" }}>
+                    {loading ? "Processando..." : "Verificar Código"}
+                </button>
+                {messageVerificar && <p style={{ marginTop: "10px" }}>{messageVerificar}</p>}
+            </form>
         </div>
     );
 }
