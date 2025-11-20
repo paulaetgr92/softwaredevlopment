@@ -1,31 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { createSale, listAllProducts } from '../api';
-import './SalesForm.css';
+import React, { useState, useEffect } from "react";
+import { createSale, listarProdutos } from "../api";
+import "./SalesForm.css";
 
 function SalesForm({ adminToken }) {
   const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await listAllProducts(adminToken);
-        setProducts(response.data);
+        const response = await listarProdutos(adminToken);
+        setProducts(Array.isArray(response) ? response : []); // garantindo array
       } catch (error) {
-        console.error('Erro ao buscar produtos:', error);
-        setMessage('Erro ao carregar produtos.');
+        console.error("Erro ao buscar produtos:", error);
+        setMessage("Erro ao carregar produtos.");
       }
     };
     fetchProducts();
   }, [adminToken]);
 
   useEffect(() => {
-    const product = products.find(p => p.Id === parseInt(selectedProduct));
+    const product = products.find(
+      (p) => p.id_roupa === parseInt(selectedProduct)
+    );
     if (product) {
-      setTotalPrice(product.TempoValor * quantity);
+      setTotalPrice(product.tempoValor * quantity);
     } else {
       setTotalPrice(0);
     }
@@ -34,14 +36,18 @@ function SalesForm({ adminToken }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedProduct || quantity <= 0) {
-      setMessage('Por favor, selecione um produto e insira uma quantidade válida.');
+      setMessage(
+        "Por favor, selecione um produto e insira uma quantidade válida."
+      );
       return;
     }
 
     try {
-      const product = products.find(p => p.Id === parseInt(selectedProduct));
+      const product = products.find(
+        (p) => p.id_roupa === parseInt(selectedProduct)
+      );
       if (!product) {
-        setMessage('Produto selecionado inválido.');
+        setMessage("Produto selecionado inválido.");
         return;
       }
 
@@ -51,14 +57,16 @@ function SalesForm({ adminToken }) {
         valor_total: totalPrice,
       };
 
-      await createSale(saleData, adminToken);
-      setMessage('Venda criada com sucesso!');
-      setSelectedProduct('');
+      await createSale(saleData, adminToken); // ✅ usando createSale
+      setMessage("Venda criada com sucesso!");
+      setSelectedProduct("");
       setQuantity(1);
       setTotalPrice(0);
     } catch (error) {
-      console.error('Erro ao criar venda:', error);
-      setMessage('Erro ao criar venda. Verifique o console para mais detalhes.');
+      console.error("Erro ao criar venda:", error);
+      setMessage(
+        "Erro ao criar venda. Verifique o console para mais detalhes."
+      );
     }
   };
 
@@ -76,8 +84,9 @@ function SalesForm({ adminToken }) {
           >
             <option value="">Selecione um produto</option>
             {products.map((product) => (
-              <option key={product.Id} value={product.Id}>
-                {product.Categoria} - {product.Tamanho} ({product.TempoValor} R$)
+              <option key={product.id_roupa} value={product.id_roupa}>
+                {product.categoria} - {product.tamanho} ({product.tempoValor}{" "}
+                R$)
               </option>
             ))}
           </select>
@@ -97,7 +106,9 @@ function SalesForm({ adminToken }) {
           <label>Valor Total:</label>
           <span>{totalPrice.toFixed(2)} R$</span>
         </div>
-        <button type="submit" className="submit-btn">Registrar Venda</button>
+        <button type="submit" className="submit-btn">
+          Registrar Venda
+        </button>
       </form>
       {message && <p className="message">{message}</p>}
     </div>
@@ -105,4 +116,3 @@ function SalesForm({ adminToken }) {
 }
 
 export default SalesForm;
-

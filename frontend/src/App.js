@@ -1,121 +1,120 @@
 import { useState } from "react";
 import {
-    BrowserRouter as Router,
-    Routes,
-    Route,
-    Navigate,
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
 } from "react-router-dom";
 
 import ModernLogin from "./components/ModernLogin";
 import ModernCadastro from "./components/ModernCadastro";
+import AtivarConta from "./components/Sellers";
 import RentalDashboard from "./components/RentalDashboard";
 import RentClothingPage from "./components/RentClothingPage";
-import AtivarConta from "./components/Sellers";
-
-import AdminLogin from "./components/AdminLogin";
-import AdminCadastro from "./components/AdminCadastro";
-import AdminDashboard from "./components/AdminDashboard";
-
 import ProductList from "./components/ProductList";
 import ProductDetail from "./components/ProductDetail";
-
+import ModernLoginAdmin from "./components/MordernLoginAdm";
+import AdminDashboard from "./components/AdminDashboard";
 import "./App.css";
 
 function App() {
-    const [token, setToken] = useState(localStorage.getItem("token") || "");
-    const [role, setRole] = useState(localStorage.getItem("role") || "user");
-    const [currentView, setCurrentView] = useState("login");
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [currentView, setCurrentView] = useState("login");
 
-    const handleLogout = () => {
-        setToken("");
-        setRole("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("userEmail");
-    };
+  const handleLogout = () => {
+    setToken("");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userEmail");
+  };
 
-    const switchToLogin = () => setCurrentView("login");
-    const switchToCadastro = () => setCurrentView("cadastro");
+  const switchToLogin = () => setCurrentView("login");
+  const switchToCadastro = () => setCurrentView("cadastro");
 
-    return (
-        <Router>
-            <Routes>
-                {/* ================== ROTAS PÚBLICAS ================== */}
-                {!token ? (
-                    <>
-                        <Route
-                            path="/"
-                            element={
-                                currentView === "login" ? (
-                                    <ModernLogin
-                                        setToken={setToken}
-                                        switchToCadastro={switchToCadastro}
-                                    />
-                                ) : (
-                                    <ModernCadastro
-                                        setToken={setToken}
-                                        switchToLogin={switchToLogin}
-                                    />
-                                )
-                            }
-                        />
-
-                        {/* Páginas públicas de produtos */}
-                        <Route path="/produtos" element={<ProductList />} />
-                        <Route path="/produto/:id" element={<ProductDetail />} />
-
-                        {/* Página de ativação */}
-                        <Route path="/active" element={<AtivarConta />} />
-
-                        {/* Rotas de admin */}
-                        <Route
-                            path="/admin/login"
-                            element={<AdminLogin setToken={setToken} setRole={setRole} />}
-                        />
-                        <Route path="/admin/cadastro" element={<AdminCadastro />} />
-
-                        {/* Redireciona qualquer outra rota para a home */}
-                        <Route path="*" element={<Navigate to="/" />} />
-                    </>
+  return (
+    <Router>
+      <Routes>
+        {/* Rotas de usuário */}
+        {!token ? (
+          <>
+            <Route
+              path="/"
+              element={
+                currentView === "login" ? (
+                  <ModernLogin
+                    setToken={setToken}
+                    switchToCadastro={switchToCadastro}
+                  />
                 ) : (
-                    <>
-                        {/* ================== ROTAS ADMIN ================== */}
-                        {role === "admin" ? (
-                            <>
-                                <Route
-                                    path="/admin/dashboard"
-                                    element={
-                                        <AdminDashboard token={token} onLogout={handleLogout} />
-                                    }
-                                />
-                                <Route path="*" element={<Navigate to="/admin/dashboard" />} />
-                            </>
-                        ) : (
-                            <>
-                                {/* ================== ROTAS USER ================== */}
-                                <Route
-                                    path="/dashboard"
-                                    element={
-                                        <RentalDashboard token={token} onLogout={handleLogout} />
-                                    }
-                                />
-                                <Route
-                                    path="/alugar/:id"
-                                    element={
-                                        <RentClothingPage token={token} onLogout={handleLogout} />
-                                    }
-                                />
-                                {/* Rotas públicas de produtos acessíveis mesmo logado */}
-                                <Route path="/produtos" element={<ProductList />} />
-                                <Route path="/produto/:id" element={<ProductDetail />} />
-                                <Route path="*" element={<Navigate to="/dashboard" />} />
-                            </>
-                        )}
-                    </>
-                )}
-            </Routes>
-        </Router>
-    );
+                  <ModernCadastro
+                    setToken={setToken}
+                    switchToLogin={switchToLogin}
+                  />
+                )
+              }
+            />
+            <Route path="/ativar-conta" element={<AtivarConta />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        ) : (
+          <>
+            <Route
+              path="/dashboard"
+              element={
+                <RentalDashboard token={token} onLogout={handleLogout} />
+              }
+            />
+            <Route
+              path="/alugar/:id"
+              element={
+                <RentClothingPage token={token} onLogout={handleLogout} />
+              }
+            />
+            <Route path="/produtos" element={<ProductList token={token} />} />
+            <Route
+              path="/produtos/:id"
+              element={<ProductDetail token={token} />}
+            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </>
+        )}
+
+        {/* Rotas admin */}
+        <Route
+          path="/admin/login"
+          element={
+            <ModernLoginAdmin
+              setAdminToken={(token) => {
+                localStorage.setItem("adminToken", token);
+                window.location.href = "/admin/dashboard";
+              }}
+            />
+          }
+        />
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            localStorage.getItem("adminToken") ? (
+              <AdminDashboard
+                onLogout={() => {
+                  localStorage.removeItem("adminToken");
+                  window.location.href = "/admin/login";
+                }}
+              />
+            ) : (
+              <Navigate to="/admin/login" replace />
+            )
+          }
+        />
+
+        {/* Qualquer rota admin inválida redireciona */}
+        <Route
+          path="/admin/*"
+          element={<Navigate to="/admin/login" replace />}
+        />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

@@ -8,45 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
-	"time"
 )
-
-const getActivationCode = `-- name: GetActivationCode :one
-SELECT a.id AS activation_code,
-       a.cadastro_id,
-       a.activation_code,
-       a.status AS code_status,
-       a.expires_at,
-       c.status AS cadastro_status
-FROM activation_code a
-         JOIN cadastro c ON a.cadastro_id = c.id
-WHERE a.cadastro_id = $1
-ORDER BY a.created_at DESC
-LIMIT 1
-`
-
-type GetActivationCodeRow struct {
-	ActivationCode   int32
-	CadastroID       int64
-	ActivationCode_2 string
-	CodeStatus       sql.NullString
-	ExpiresAt        time.Time
-	CadastroStatus   string
-}
-
-func (q *Queries) GetActivationCode(ctx context.Context, cadastroID int64) (GetActivationCodeRow, error) {
-	row := q.db.QueryRowContext(ctx, getActivationCode, cadastroID)
-	var i GetActivationCodeRow
-	err := row.Scan(
-		&i.ActivationCode,
-		&i.CadastroID,
-		&i.ActivationCode_2,
-		&i.CodeStatus,
-		&i.ExpiresAt,
-		&i.CadastroStatus,
-	)
-	return i, err
-}
 
 const saveActivationCode = `-- name: SaveActivationCode :one
 INSERT INTO activation_code (
@@ -63,15 +25,15 @@ RETURNING cadastro_id, activation_code, code
 type SaveActivationCodeParams struct {
 	CadastroID     int64
 	ActivationCode string
-	Code           string
-	ExpiresAt      time.Time
+	Code           sql.NullString
+	ExpiresAt      sql.NullTime
 	Status         sql.NullString
 }
 
 type SaveActivationCodeRow struct {
 	CadastroID     int64
 	ActivationCode string
-	Code           string
+	Code           sql.NullString
 }
 
 func (q *Queries) SaveActivationCode(ctx context.Context, arg SaveActivationCodeParams) (SaveActivationCodeRow, error) {
@@ -84,35 +46,5 @@ func (q *Queries) SaveActivationCode(ctx context.Context, arg SaveActivationCode
 	)
 	var i SaveActivationCodeRow
 	err := row.Scan(&i.CadastroID, &i.ActivationCode, &i.Code)
-	return i, err
-}
-
-const verifyActivationCode = `-- name: VerifyActivationCode :one
-SELECT
-    id,
-    cadastro_id,
-    code
-
-FROM activation_code
-WHERE cadastro_id = $1
-  AND code = $2
-LIMIT 1
-`
-
-type VerifyActivationCodeParams struct {
-	CadastroID int64
-	Code       string
-}
-
-type VerifyActivationCodeRow struct {
-	ID         int32
-	CadastroID int64
-	Code       string
-}
-
-func (q *Queries) VerifyActivationCode(ctx context.Context, arg VerifyActivationCodeParams) (VerifyActivationCodeRow, error) {
-	row := q.db.QueryRowContext(ctx, verifyActivationCode, arg.CadastroID, arg.Code)
-	var i VerifyActivationCodeRow
-	err := row.Scan(&i.ID, &i.CadastroID, &i.Code)
 	return i, err
 }

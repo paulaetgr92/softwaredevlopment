@@ -1,10 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import "./AdminAuth.css";
 
-const AdminCadastro = () => {
-  const navigate = useNavigate();
-
+const AdminCadastro = ({ setAdminToken, switchToAdminLogin }) => {
   const [formData, setFormData] = useState({
     cnpj: "",
     name: "",
@@ -16,8 +13,12 @@ const AdminCadastro = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
@@ -37,9 +38,9 @@ const AdminCadastro = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError("");
     setSuccess("");
-    setLoading(true);
 
     if (!validateForm()) {
       setLoading(false);
@@ -47,31 +48,40 @@ const AdminCadastro = () => {
     }
 
     try {
+      const adminData = {
+        cnpj: formData.cnpj,
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      };
+
       const response = await fetch(
         "http://localhost:8080/api/v1/admin/create",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            cnpj: formData.cnpj,
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(adminData),
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Erro ao cadastrar admin");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setSuccess(
+            "Admin cadastrado com sucesso! Redirecionando para login..."
+          );
+          setTimeout(() => {
+            switchToAdminLogin();
+          }, 2000);
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || "Erro ao cadastrar admin");
       }
-
-      setSuccess("Admin cadastrado com sucesso! Redirecionando...");
-      setTimeout(() => navigate("/admin/login"), 2000);
-    } catch (err) {
-      console.error("Erro ao cadastrar admin:", err);
-      setError(err.message || "Erro ao conectar com o servidor");
+    } catch (error) {
+      setError("Erro ao conectar com o servidor");
     } finally {
       setLoading(false);
     }
@@ -79,10 +89,6 @@ const AdminCadastro = () => {
 
   return (
     <div className="admin-auth-container">
-      <Link to="/admin/login" className="admin-link">
-        Voltar ao Login
-      </Link>
-
       <div className="admin-auth-card">
         <div className="admin-auth-header">
           <h2>Cadastro Admin</h2>
@@ -94,8 +100,10 @@ const AdminCadastro = () => {
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-group">
-            <label>CNPJ</label>
+            <label htmlFor="cnpj">CNPJ</label>
             <input
+              type="text"
+              id="cnpj"
               name="cnpj"
               value={formData.cnpj}
               onChange={handleChange}
@@ -106,8 +114,10 @@ const AdminCadastro = () => {
           </div>
 
           <div className="form-group">
-            <label>Nome da Empresa</label>
+            <label htmlFor="name">Nome da Empresa</label>
             <input
+              type="text"
+              id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
@@ -117,9 +127,10 @@ const AdminCadastro = () => {
           </div>
 
           <div className="form-group">
-            <label>Email</label>
+            <label htmlFor="email">Email</label>
             <input
               type="email"
+              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
@@ -129,9 +140,10 @@ const AdminCadastro = () => {
           </div>
 
           <div className="form-group">
-            <label>Senha</label>
+            <label htmlFor="password">Senha</label>
             <input
               type="password"
+              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -141,9 +153,10 @@ const AdminCadastro = () => {
           </div>
 
           <div className="form-group">
-            <label>Confirmar Senha</label>
+            <label htmlFor="confirmPassword">Confirmar Senha</label>
             <input
               type="password"
+              id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
@@ -160,6 +173,19 @@ const AdminCadastro = () => {
             {loading ? "Cadastrando..." : "Cadastrar"}
           </button>
         </form>
+
+        <div className="admin-auth-footer">
+          <p>
+            Já tem uma conta?
+            <button
+              type="button"
+              className="link-button"
+              onClick={switchToAdminLogin}
+            >
+              Faça login
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -1,87 +1,63 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { createSale } from "../api"; // envia para o backend
-import "./RentClothingPage.css";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { apiFetch } from "../api";
 
-export default function RentClothingPage({ token }) {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
-  const [rentalType, setRentalType] = useState("daily");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [confirming, setConfirming] = useState(false);
+const RentClothingPage = ({ token }) => {
+    const { id } = useParams();
+    const [product, setProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-  const mockProducts = [
-    {
-      id: 1,
-      name: "Vestido Elegante Preto",
-      daily_price: 89.9,
-      weekly_price: 299.9,
-      image_url:
-        "https://images.unsplash.com/photo-1566479179817-c0b5b4b4b1b5?w=300&h=400&fit=crop",
-    },
-    {
-      id: 2,
-      name: "Blazer Executivo",
-      daily_price: 129.9,
-      weekly_price: 449.9,
-      image_url:
-        "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=400&fit=crop",
-    },
-  ];
+    useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                const data = await apiFetch(`produtos/${id}`, { method: "GET" }, token);
 
-  useEffect(() => {
-    const found = mockProducts.find((p) => p.id === parseInt(id));
-    if (found) setProduct(found);
-  }, [id]);
+                if (!data) {
+                    setError("Produto não encontrado.");
+                    setLoading(false);
+                    return;
+                }
 
-  const handleConfirmRental = async () => {
-    if (!startDate || !endDate) {
-      alert("Preencha as datas de início e fim!");
-      return;
-    }
-    setConfirming(true);
-    try {
-      const saleData = {
-        produtoId: product.id,
-        quantidade: 1,
-        tempoValor: rentalType === "daily" ? 1 : 7, // 1 dia ou 7 dias
-      };
-      console.log("Enviando para backend:", saleData);
-      const res = await createSale(saleData, token);
-      console.log("Resposta backend:", res);
-      alert(`Aluguel confirmado para "${product.name}"!`);
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Erro ao enviar aluguel:", err);
-      alert("Falha ao enviar aluguel. Veja o console.");
-    } finally {
-      setConfirming(false);
-    }
-  };
+                // Mapear produto usando image_url do backend
+                const mappedProduct = {
+                    id: data.id_roupa ?? 0,
+                    name: data.categoria ?? "Produto sem nome",
+                    tempoValor: data.tempo_valor ?? 0,
+                    tamanho: data.tamanho ?? "-",
+                    cores: data.cores ?? "-",
+                    image_url: data.image_url || "https://via.placeholder.com/300x400",
+                };
 
-  if (!product) return <div>Carregando...</div>;
+                setProduct(mappedProduct);
+            } catch (err) {
+                console.error("Erro ao buscar produto:", err);
+                setError("❌ Falha ao carregar produto.");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  return (
-    <div className="rent-page">
-      <button onClick={() => navigate(-1)}>← Voltar</button>
-      <div className="rent-container">
-        <img src={product.image_url} alt={product.name} />
-        <h2>{product.name}</h2>
-        <label>Tipo de Aluguel:</label>
-        <select value={rentalType} onChange={(e) => setRentalType(e.target.value)}>
-          <option value="daily">Diária — R$ {product.daily_price}</option>
-          <option value="weekly">Semanal — R$ {product.weekly_price}</option>
-        </select>
-        <label>Data de Início:</label>
-        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-        <label>Data de Devolução:</label>
-        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-        <button onClick={handleConfirmRental} disabled={confirming}>
-          {confirming ? "Confirmando..." : "Confirmar Aluguel"}
-        </button>
-      </div>
-    </div>
-  );
-}
+        fetchProduct();
+    }, [id, token]);
+
+    if (loading) return <p>Carregando produto...</p>;
+    if (error) return <p>{error}</p>;
+
+    return (
+        <div className="rent-clothing-page">
+            <h1>Detalhes do Produto</h1>
+            <img
+                src={product.image_url}
+                alt={product.name}
+                style={{ width: 300, height: 400, objectFit: "cover" }}
+            />
+            <p>Categoria: {product.name}</p>
+            <p>Tamanho: {product.tamanho}</p>
+            <p>Cores: {product.cores}</p>
+            <p>Valor: R$ {product.tempoValor}</p>
+        </div>
+    );
+};
+
+export default RentClothingPage;

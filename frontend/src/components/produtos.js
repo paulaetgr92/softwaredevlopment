@@ -1,73 +1,53 @@
-import { apiFetch } from "../api";
+// services/produtos.js
+import {
+  listarProdutos as apiListarProdutos,
+  criarProduto as apiCriarProduto,
+  buscarProdutoPorId as apiBuscarProdutoPorId,
+  inativarProduto as apiInativarProduto,
+  atualizarProduto as apiAtualizarProduto,
+} from "../api";
 
-// Criar produto
-export async function criarProduto(dados) {
-  try {
-    const response = await apiFetch("produtos", {
-      method: "POST",
-      body: JSON.stringify(dados),
-    });
-    console.log("Produto criado:", response);
-    return response;
-  } catch (error) {
-    console.error("Erro ao criar produto:", error.message);
-    throw error;
-  }
+/**
+ * Retorna todos os produtos (admin ou público conforme token)
+ * @param {string} adminToken - Token de autenticação
+ */
+export async function listarProdutos(adminToken) {
+  return apiListarProdutos(adminToken);
 }
 
-// Listar todos os produtos
-export async function listarProdutos() {
-  try {
-    const response = await apiFetch("produtos", {
-      method: "GET",
-    });
-    console.log("Produtos listados:", response);
-    return response;
-  } catch (error) {
-    console.error("Erro ao listar produtos:", error.message);
-    throw error;
-  }
+/**
+ * Cria um novo produto
+ * @param {Object} dadosProduto - Dados do produto a ser criado
+ * @param {string} adminToken - Token de autenticação
+ */
+export async function criarProduto(dadosProduto, adminToken) {
+  return apiCriarProduto(dadosProduto, adminToken);
 }
 
-// Buscar produto por ID
-export async function buscarProdutoPorId(id) {
-  try {
-    const response = await apiFetch(`produtos/${id}`, {
-      method: "GET",
-    });
-    console.log("Produto encontrado:", response);
-    return response;
-  } catch (error) {
-    console.error("Erro ao buscar produto:", error.message);
-    throw error;
-  }
+/**
+ * Busca um produto específico pelo ID
+ * @param {number|string} idProduto - ID do produto
+ * @param {string} adminToken - Token de autenticação
+ */
+export async function buscarProdutoPorId(idProduto, adminToken) {
+  return apiBuscarProdutoPorId(idProduto, adminToken);
 }
 
-// Atualizar produto por ID
-export async function atualizarProduto(id, dados) {
-  try {
-    const response = await apiFetch(`produtos/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(dados),
-    });
-    console.log("Produto atualizado:", response);
-    return response;
-  } catch (error) {
-    console.error("Erro ao atualizar produto:", error.message);
-    throw error;
-  }
+/**
+ * Atualiza os dados de um produto existente
+ * @param {number|string} idProduto - ID do produto
+ * @param {Object} dadosProduto - Novos dados do produto
+ * @param {string} adminToken - Token de autenticação
+ */
+export async function atualizarProduto(idProduto, dadosProduto, adminToken) {
+  return apiAtualizarProduto(idProduto, dadosProduto, adminToken);
 }
 
-// Inativar produto
-export async function inativarProduto(id) {
-  try {
-    const response = await apiFetch(`produtos/${id}/inativar`, {
-      method: "PUT",
-    });
-    console.log("Produto inativado:", response);
-    return response;
-  } catch (error) {
-    console.error("Erro ao inativar produto:", error.message);
-    throw error;
-  }
+/**
+ * Inativa ou deleta um produto
+ * @param {number|string} idProduto - ID do produto
+ * @param {string} adminToken - Token de autenticação
+ */
+export async function inativarProduto(idProduto, adminToken) {
+  return apiInativarProduto(idProduto, adminToken);
 }

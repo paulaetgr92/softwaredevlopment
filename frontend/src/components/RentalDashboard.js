@@ -1,26 +1,100 @@
-import { useState, useEffect } from "react";
-import { createSale } from "../api";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { createSale, apiFetch } from "../api";
 import "./RentalDashboard.css";
 
 export default function RentalDashboard({ token, onLogout }) {
-  const userEmail = localStorage.getItem("userEmail") || "Usuário";
   const [activeTab, setActiveTab] = useState("catalog");
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [rentals, setRentals] = useState([]);
   const [toast, setToast] = useState({ message: "", type: "success" });
+  const [isLoading, setIsLoading] = useState(false);
+  const [productsLoading, setProductsLoading] = useState(true);
 
-const mockProducts = [
-  { id:1, name:"Vestido Elegante Preto", daily_price:89.9, weekly_price:299.9, image_url:"https://images.unsplash.com/photo-1566479179817-c0b5b4b4b1b5?w=300&h=400&fit=crop" },
-  { id:2, name:"Blazer Executivo", daily_price:129.9, weekly_price:449.9, image_url:"https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=400&fit=crop" },
-  { id:3, name:"Casaco de Inverno Masculino", daily_price:99.9, weekly_price:349.9, image_url:"https://images.unsplash.com/photo-1600180758895-798f2b7c4c32?w=300&h=400&fit=crop" },
-  { id:4, name:"Calça Jeans Slim", daily_price:69.9, weekly_price:239.9, image_url:"https://images.unsplash.com/photo-1593032457868-bc0f2f5a7f39?w=300&h=400&fit=crop" },
-  { id:5, name:"Camisa Social Branca", daily_price:59.9, weekly_price:199.9, image_url:"https://images.unsplash.com/photo-1593032466438-8fc45a75aeb5?w=300&h=400&fit=crop" },
-  { id:6, name:"Saia Midi Estampada", daily_price:79.9, weekly_price:269.9, image_url:"https://images.unsplash.com/photo-1593032457459-3b6d75a9e7f1?w=300&h=400&fit=crop" }
-];
+  const userEmail = useMemo(
+    () => localStorage.getItem("userEmail") || "Usuário",
+    []
+  );
+  const navigate = useNavigate();
 
+  // Carrega produtos do backend - COMPATÍVEL COM ADMIN
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setProductsLoading(true);
+      try {
+        const data = await apiFetch("produtos", { method: "GET" }, token);
+        console.log("Produtos recebidos da API:", data);
 
-  useEffect(() => setProducts(mockProducts), []);
+        // Mapeia os campos do backend de forma consistente
+        const mappedProducts = (data || []).map((p) => ({
+          // IDs
+          id: p.id_roupa ?? 0,
+          id_roupa: p.id_roupa ?? 0,
+
+          // Dados do produto
+          name: p.categoria ?? "Produto sem nome",
+          categoria: p.categoria ?? "Produto sem nome",
+          tamanho: p.tamanho ?? "-",
+          cores: p.cores ?? "-",
+
+          // Valor (aceita ambos os formatos)
+          tempoValor: p.tempo_valor ?? p.tempoValor ?? 0,
+          tempo_valor: p.tempo_valor ?? p.tempoValor ?? 0,
+
+          // Status e localização
+          status: p.status ?? "disponivel",
+          localizacao: p.localizacao ?? "-",
+
+          // Imagens (aceita ambos os formatos)
+          image_url:
+            p.image_url ||
+            p.imagem_url ||
+            "https://via.placeholder.com/300x400",
+          imagem_url:
+            p.image_url ||
+            p.imagem_url ||
+            "https://via.placeholder.com/300x400",
+        }));
+
+        console.log("Produtos mapeados:", mappedProducts);
+
+        // Filtra apenas produtos disponíveis para usuários
+        const availableProducts = mappedProducts.filter(
+          (p) => p.status === "disponivel"
+        );
+
+        setProducts(availableProducts);
+      } catch (err) {
+        console.error("Erro ao buscar produtos:", err);
+        showToast("❌ Falha ao carregar produtos", "error");
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [token]);
+
+  // Carrega carrinho do localStorage ao montar o componente
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem("cart");
+      if (savedCart) {
+        setCart(JSON.parse(savedCart));
+      }
+    } catch (err) {
+      console.error("Erro ao carregar carrinho:", err);
+    }
+  }, []);
+
+  // Salva carrinho no localStorage sempre que mudar
+  useEffect(() => {
+    try {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    } catch (err) {
+      console.error("Erro ao salvar carrinho:", err);
+    }
+  }, [cart]);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -41,88 +115,248 @@ const mockProducts = [
     showToast("❌ Item removido do carrinho.");
   };
 
+  const goToRentPage = (productId) => {
+    navigate(`/alugar/${productId}`);
+  };
+
+  const goToAdmin = () => {
+    navigate("/admin");
+  };
+
   const confirmRental = async () => {
-    if (cart.length === 0) {
+    if (!cart.length) {
       showToast("⚠️ Carrinho vazio!", "warning");
       return;
     }
 
+    setIsLoading(true);
     try {
-      const promises = cart.map((item) => {
+      const results = [];
+
+      // Processa todos os itens do carrinho
+      for (const item of cart) {
         const saleData = {
           produtoId: item.id,
           quantidade: 1,
-          tempoValor: 1,
+          tempoValor: item.tempoValor,
         };
-        console.log("Enviando para backend:", saleData);
-        return createSale(saleData, token).then((res) => ({
-          ...item,
-          backendId: res.id || null,
-        }));
-      });
 
-      const results = await Promise.all(promises);
-      setRentals([...rentals, ...results]);
+        const res = await createSale(saleData, token);
+
+        results.push({
+          ...item,
+          backendId: res?.produtoId || null,
+          total: res?.total || item.tempoValor,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Atualiza estado de aluguéis
+      setRentals((prev) => [...prev, ...results]);
+
+      // Limpa carrinho
       setCart([]);
+      localStorage.removeItem("cart");
+
+      // Muda para aba de aluguéis
       setActiveTab("rentals");
-      showToast("🎉 Aluguel confirmado e salvo no backend!");
+
+      showToast(`🎉 ${results.length} item(ns) alugado(s) com sucesso!`);
     } catch (err) {
-      console.error("Erro ao enviar aluguel:", err);
-      showToast("❌ Falha ao enviar aluguel!", "error");
+      console.error("Erro ao confirmar aluguel:", err);
+      showToast(`❌ ${err.message || "Falha ao processar aluguel!"}`, "error");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const calculateCartTotal = () => {
+    return cart.reduce((sum, item) => sum + (item.tempoValor || 0), 0);
   };
 
   return (
     <div className="rental-dashboard">
       <header>
         <h1>DoutorRent</h1>
+        <span>Bem-vindo, {userEmail}</span>
+        <button onClick={goToAdmin}>Área do Administrador</button>
         <button onClick={onLogout}>Sair</button>
       </header>
 
       <nav>
-        <button onClick={() => setActiveTab("catalog")}>👗 Catálogo</button>
-        <button onClick={() => setActiveTab("cart")}>🛒 Carrinho ({cart.length})</button>
-        <button onClick={() => setActiveTab("rentals")}>📦 Meus Aluguéis ({rentals.length})</button>
+        <button
+          onClick={() => setActiveTab("catalog")}
+          className={activeTab === "catalog" ? "active" : ""}
+        >
+          👗 Catálogo
+        </button>
+        <button
+          onClick={() => setActiveTab("cart")}
+          className={activeTab === "cart" ? "active" : ""}
+        >
+          🛒 Carrinho ({cart.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("rentals")}
+          className={activeTab === "rentals" ? "active" : ""}
+        >
+          📦 Meus Aluguéis ({rentals.length})
+        </button>
       </nav>
 
       <main>
         {activeTab === "catalog" && (
           <div className="catalog-section">
-            {products.map((p) => (
-              <div key={p.id} className="product-card">
-                <img src={p.image_url} alt={p.name} />
-                <h3>{p.name}</h3>
-                <button onClick={() => addToCart(p)}>Alugar</button>
+            {productsLoading ? (
+              <div className="loading-state">
+                <p>⏳ Carregando produtos...</p>
               </div>
-            ))}
+            ) : products.length === 0 ? (
+              <div className="empty-state">
+                <p>📭 Nenhum produto disponível no momento</p>
+              </div>
+            ) : (
+              <div className="products-grid">
+                {products.map((p) => (
+                  <div key={p.id} className="product-card">
+                    <img src={p.image_url} alt={p.name} />
+                    <h3>{p.name}</h3>
+                    <div className="product-details">
+                      <p>Tamanho: {p.tamanho}</p>
+                      <p>Cores: {p.cores}</p>
+                      <p className="price">R$ {p.tempoValor.toFixed(2)}</p>
+                    </div>
+                    <div className="product-actions">
+                      <button
+                        onClick={() => addToCart(p)}
+                        disabled={cart.find((item) => item.id === p.id)}
+                      >
+                        {cart.find((item) => item.id === p.id)
+                          ? "✓ No Carrinho"
+                          : "Adicionar ao Carrinho"}
+                      </button>
+                      <button
+                        onClick={() => goToRentPage(p.id)}
+                        className="btn-secondary"
+                      >
+                        Alugar Agora
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === "cart" && (
           <div className="cart-section">
-            {cart.length === 0 ? <p>Carrinho vazio</p> : cart.map((p) => (
-              <div key={p.id}>
-                <span>{p.name}</span>
-                <button onClick={() => removeFromCart(p.id)}>❌</button>
+            {cart.length === 0 ? (
+              <div className="empty-state">
+                <p>🛒 Seu carrinho está vazio</p>
+                <button onClick={() => setActiveTab("catalog")}>
+                  Explorar Catálogo
+                </button>
               </div>
-            ))}
-            {cart.length > 0 && <button onClick={confirmRental}>Confirmar Aluguel</button>}
+            ) : (
+              <>
+                <div className="cart-items">
+                  {cart.map((p) => (
+                    <div key={p.id} className="cart-item">
+                      <img
+                        src={p.image_url}
+                        alt={p.name}
+                        className="cart-item-image"
+                      />
+                      <div className="cart-item-details">
+                        <h4>{p.name}</h4>
+                        <p>
+                          Tamanho: {p.tamanho} | Cores: {p.cores}
+                        </p>
+                      </div>
+                      <div className="cart-item-price">
+                        <span>R$ {p.tempoValor.toFixed(2)}</span>
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(p.id)}
+                        className="btn-remove"
+                        aria-label="Remover item"
+                      >
+                        ❌
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="cart-summary">
+                  <div className="cart-total">
+                    <span>Total:</span>
+                    <span className="total-value">
+                      R$ {calculateCartTotal().toFixed(2)}
+                    </span>
+                  </div>
+                  <button
+                    onClick={confirmRental}
+                    disabled={isLoading}
+                    className="btn-confirm"
+                  >
+                    {isLoading ? "⏳ Processando..." : "Confirmar Aluguel"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
         {activeTab === "rentals" && (
           <div className="rentals-section">
-            {rentals.length === 0 ? <p>Nenhum aluguel ainda</p> : rentals.map((r) => (
-              <div key={r.id || r.backendId}>
-                <span>{r.name}</span>
-                <span>ID backend: {r.backendId}</span>
+            {rentals.length === 0 ? (
+              <div className="empty-state">
+                <p>📦 Você ainda não tem aluguéis</p>
+                <button onClick={() => setActiveTab("catalog")}>
+                  Ver Catálogo
+                </button>
               </div>
-            ))}
+            ) : (
+              <div className="rentals-list">
+                {rentals.map((r, index) => (
+                  <div key={r.backendId || index} className="rental-item">
+                    <div className="rental-header">
+                      <h4>{r.name}</h4>
+                      <span className="rental-id">
+                        #{r.backendId || "Pendente"}
+                      </span>
+                    </div>
+                    <div className="rental-details">
+                      <p>
+                        Tamanho: {r.tamanho} | Cores: {r.cores}
+                      </p>
+                      {r.timestamp && (
+                        <p className="rental-date">
+                          {new Date(r.timestamp).toLocaleDateString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
+                    <div className="rental-total">
+                      <span>Total: R$ {r.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
 
-      {toast.message && <div className={`toast-message ${toast.type}`}>{toast.message}</div>}
+      {toast.message && (
+        <div className={`toast-message ${toast.type}`}>{toast.message}</div>
+      )}
+
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner">⏳ Processando...</div>
+        </div>
+      )}
     </div>
   );
 }

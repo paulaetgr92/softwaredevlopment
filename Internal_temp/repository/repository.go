@@ -27,12 +27,6 @@ type ProdutoRepositoryInterface interface {
 	GetProdutoRepository(ctx context.Context) ([]db.Produto, error)
 }
 
-type ActivationCodeRepositoryInterface interface {
-	SaveActivationCode(ctx context.Context, arg db.SaveActivationCodeParams) (db.SaveActivationCodeRow, error)
-	GetActivationCode(ctx context.Context, arg db.GetCadastroByActivationCodeParams) (db.GetCadastroByActivationCodeRow, error)
-	VerifyActivationCode(ctx context.Context, arg db.VerifyActivationCodeParams) (db.VerifyActivationCodeRow, error)
-}
-
 type CreateSaleInterface interface {
 	CreateSale(ctx context.Context, arg db.CreateSaleParams) (db.Sale, error)
 }

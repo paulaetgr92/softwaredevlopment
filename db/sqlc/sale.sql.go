@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createSale = `-- name: CreateSale :one
@@ -16,9 +17,9 @@ RETURNING id, produto_id, quantidade, tempo_valor, total, data_venda
 `
 
 type CreateSaleParams struct {
-	ProdutoID  int64
-	Quantidade int32
-	TempoValor string
+	ProdutoID  sql.NullInt64
+	Quantidade sql.NullInt32
+	TempoValor sql.NullFloat64
 }
 
 func (q *Queries) CreateSale(ctx context.Context, arg CreateSaleParams) (Sale, error) {

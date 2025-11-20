@@ -10,13 +10,13 @@ import (
 )
 
 type ActivationCode struct {
-	ID             int32
-	ActivationCode string
 	CadastroID     int64
-	Code           string
+	ActivationCode string
 	Status         sql.NullString
-	ExpiresAt      time.Time
+	Code           sql.NullString
 	CreatedAt      sql.NullTime
+	UpdatedAt      sql.NullTime
+	ExpiresAt      sql.NullTime
 }
 
 type Admin struct {
@@ -53,11 +53,11 @@ type Produto struct {
 }
 
 type Sale struct {
-	ID         int32
-	ProdutoID  int64
-	Quantidade int32
-	TempoValor string
-	Total      sql.NullString
+	ID         int64
+	ProdutoID  sql.NullInt64
+	Quantidade sql.NullInt32
+	TempoValor sql.NullFloat64
+	Total      sql.NullFloat64
 	DataVenda  sql.NullTime
 }
 

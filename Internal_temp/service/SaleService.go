@@ -5,7 +5,7 @@ import (
 	"awesomeProject/Internal_temp/repository"
 	db "awesomeProject/db/sqlc"
 	"context"
-	"strconv"
+	"database/sql"
 )
 
 type SaleService struct {
@@ -20,9 +20,18 @@ func NewSaleService(repo Repository.SalesNewRepository) *SaleService {
 
 func (s *SaleService) CreateSale(ctx context.Context, request model.SaleRequest) (db.Sale, error) {
 	arg := db.CreateSaleParams{
-		ProdutoID:  request.ProdutoID,
-		Quantidade: request.Quantidade,
-		TempoValor: strconv.FormatInt(request.TempoValor, 10),
+		ProdutoID: sql.NullInt64{
+			Int64: request.ProdutoID,
+			Valid: true,
+		},
+		Quantidade: sql.NullInt32{
+			Int32: request.Quantidade,
+			Valid: true,
+		},
+		TempoValor: sql.NullFloat64{
+			Float64: float64(request.TempoValor),
+			Valid:   true,
+		},
 	}
 
 	sale, err := s.repo.CreateSale(ctx, arg)
